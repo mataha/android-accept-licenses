@@ -192,6 +192,11 @@ goto :main
 
     goto :EOF
 
+:version
+    echo:%VERSION%
+
+    exit /b 0
+
 :usage
     echo:Usage: %PROGRAM% [-h ^| -u ^| --version]
     echo:    Accepts licenses for all available packages of Android SDK.
@@ -209,10 +214,24 @@ goto :main
 
     exit /b 1
 
-:version
-    echo:%VERSION%
+:failed_discovery
+    call :error "Error: sdkmanager discovery failed:"
+    call :error
+    call :error "    - `sdkmanager` command could not be found in your PATH;"
+    call :error "    - ANDROID_SDK_ROOT was not set or was set incorrectly"
+    call :error
+    call :error "Last location checked: %sdkmanager%"
 
-    exit /b 0
+    call :stop
+
+    exit /b 2
+
+:failed_execution
+    call :error "Error: sdkmanager execution failed (exit code: %ERRORLEVEL%)"
+
+    call :stop
+
+    exit /b 3
 
 :main
     call :setup_colors
@@ -220,27 +239,11 @@ goto :main
     call :setup_title
 
     call :find_sdkmanager "sdkmanager"
-
-    if %ERRORLEVEL% equ 9009 (
-        call :error "Error: sdkmanager discovery failed:"
-        call :error
-        call :error "    - `sdkmanager` command could not be found in your PATH;"
-        call :error "    - ANDROID_SDK_ROOT was not set or was set incorrectly"
-        call :error
-        call :error "Last location checked: %sdkmanager%"
-
-        call :stop
-        exit /b 2
-    )
-
-    if %ERRORLEVEL% neq 0 (
-        call :error "Error: sdkmanager execution failed (exit code: %ERRORLEVEL%)"
-
-        call :stop
-        exit /b 3
-    )
+    if %ERRORLEVEL% equ 9009 goto :failed_discovery
+    if %ERRORLEVEL% neq 0    goto :failed_execution
 
     call :accept_licenses "%sdkmanager%"
+
     call :stop
 
 @endlocal & exit /b 0
