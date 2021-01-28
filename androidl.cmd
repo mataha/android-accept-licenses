@@ -220,7 +220,7 @@ goto :main
     call :error "    - `sdkmanager` command could not be found in your PATH;"
     call :error "    - ANDROID_SDK_ROOT was not set or was set incorrectly"
     call :error
-    call :error "Last location checked: %sdkmanager%"
+    call :error "Last location checked: %SDKMANAGER%"
 
     call :stop
 
@@ -238,11 +238,11 @@ goto :main
     call :setup_term
     call :setup_title
 
-    call :find_sdkmanager "sdkmanager"
+    call :find_sdkmanager "SDKMANAGER"
     if %ERRORLEVEL% equ 9009 goto :failed_discovery
     if %ERRORLEVEL% neq 0    goto :failed_execution
 
-    call :accept_licenses "%sdkmanager%"
+    call :accept_licenses "%SDKMANAGER%"
 
     call :stop
 
