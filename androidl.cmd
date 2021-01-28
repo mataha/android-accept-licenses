@@ -1,0 +1,246 @@
+@if "%DEBUG%"=="" @echo off
+::
+:: Copyright (c) 2021 mataha <mataha@users.noreply.github.com>
+:: 
+:: Permission is hereby granted, free of charge, to any person obtaining a copy
+:: of this software and associated documentation files (the "Software"), to
+:: deal in the Software without restriction, including without limitation the
+:: rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+:: sell copies of the Software, and to permit persons to whom the Software is
+:: furnished to do so, subject to the following conditions:
+:: 
+:: The above copyright notice and this permission notice shall be included in
+:: all copies or substantial portions of the Software.
+:: 
+:: THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+:: IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+:: FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+:: AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+:: LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+:: FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+:: IN THE SOFTWARE.
+::
+@setlocal DisableDelayedExpansion EnableExtensions
+
+set PROGRAM=%~n0
+set VERSION=0.0.1
+
+if not "%~2"==""            goto :usage &:: only one argument allowed
+if /i "%~1"=="-h"           goto :usage
+if /i "%~1"=="--help"       goto :usage
+if /i "%~1"=="-?"           goto :usage
+if /i "%~1"=="--version"    goto :version
+if /i "%~1"=="-u"           set UNATTENDED=true
+if /i "%~1"=="--unattended" set UNATTENDED=true
+set LF=^
+
+
+goto :main
+
+
+:create_stream &:: (*file, lines)
+    @setlocal EnableDelayedExpansion
+
+    set __extension=.yes
+
+    set __temp=%TEMP%
+    if "%__temp%"=="" set __temp=.
+    for %%i in ("%__temp%") do set __temp=%%~fi
+
+    for /l %%u in (0, 1, 5) do set __filename=!__filename!!RANDOM!
+    set __stream=%__temp%\%__filename%%__extension%
+
+    set __fill=y
+    for /l %%u in (1, 1, %~2) do echo:%__fill%>>%__stream%
+
+    @endlocal & set "%~1=%__stream%" & goto :EOF
+
+:delete_stream &:: (file)
+    if not "%~1"=="" del /f /q "%~1" 2>nul
+
+    goto :EOF
+
+:find_sdkmanager &:: (*sdkmanager) |> errorlevel
+    @setlocal
+
+    :: Take 1: try to find `sdkmanager` in our PATH (or in this directory)
+    set __sdkmanager=sdkmanager.bat
+    where /q %__sdkmanager% 2>nul && goto :command_exists
+
+    :: Take 2: check if we can find `sdkmanager` from ANDROID_SDK_ROOT
+    if not defined ANDROID_SDK_ROOT (
+        @rem Default Windows installation location, perhaps?
+        set ANDROID_SDK_ROOT=%LOCALAPPDATA%\Android\Sdk
+    )
+    set __android_sdk_root=%ANDROID_SDK_ROOT:"=%
+
+    :: Take 2a: latest SDK Command-Line Tools package directory
+    :: https://developer.android.com/studio/command-line/#tools-sdk
+    set __sdkmanager=%__android_sdk_root%\cmdline-tools\latest\bin\sdkmanager.bat
+    if exist "%__sdkmanager%" goto :command_exists
+
+    :: Take 2b: legacy SDK Tools package directory (last revision: 26.1.1)
+    :: https://developer.android.com/studio/releases/sdk-tools
+    set __sdkmanager=%__android_sdk_root%\tools\bin\sdkmanager.bat
+    if exist "%__sdkmanager%" goto :command_exists
+
+    :command_exists
+        call %__sdkmanager% --version >nul 2>&1
+        set __errorlevel=%ERRORLEVEL%
+
+    endlocal & set "%~1=%__sdkmanager%" & exit /b %__errorlevel%
+
+:accept_licenses &:: (sdkmanager)
+    @setlocal
+
+    set /a __offset=2 + 5
+    call :count_licenses "%~1" "licenses" %__offset%
+
+    if not defined licenses (
+        call :info "There are no SDK package licenses to accept."
+        @endlocal & goto :EOF
+    )
+
+    :: Account for 'Review licenses that have not been accepted (y/N)?' prompt
+    set /a __prompts=licenses + 1
+
+    call :create_stream "stream" %__prompts%
+    call "%~1" --licenses <"%stream%" >nul 2>&1 &:: Always returns 0 unless ^C
+    call :delete_stream "%stream%"
+
+    call :info "All (%licenses%) SDK package licenses have been accepted."
+
+    @endlocal & goto :EOF
+
+:count_licenses &:: (sdkmanager, *licenses, offset)
+    @setlocal EnableDelayedExpansion
+
+    set "__pattern=SDK package license"
+
+    set "__echo=echo:N"
+    set "__call=call "%~1" --licenses 2^>nul"
+    set "__find=find /i "%__pattern%" 2^>nul"
+
+    set "__command=%__echo%^|%__call%^|%__find%"
+
+    for /f "usebackq eol= tokens=*" %%i in (`%__command%`) do (
+        @rem Can be potentially nasty if the command's output contains
+        @rem exclamation marks, but so far Google has never put them there.
+        @rem If it ever becomes an issue: https://stackoverflow.com/a/8162578
+        set "__line=%%i"
+
+        set /a __length=0
+
+        for %%l in ("!LF!") do (
+            for /f "eol= " %%w in ("!__line: =%%~l!") do (
+                set /a __length+=1
+                set __tokens[!__length!]=%%w
+            )
+        )
+    )
+
+    set /a __token_index=__length - %~3
+    set __token=!__tokens[%__token_index%]!
+
+    :: Sanitize this, as it most likely contains a carriage return character
+    set /a "__licenses=%__token%" 2>nul
+
+    @endlocal & set "%~2=%__licenses%" & goto :EOF
+
+:setup_colors
+    ver | find /i "Version 10.0" >nul 2>&1 && if not defined ClientName (
+        set RED=[31m
+        set YELLOW=[33m
+        set RESET=[0m
+    ) || (
+        set RED=
+        set YELLOW=
+        set RESET=
+    )
+
+    goto :EOF
+
+:setup_term
+    :: If we're not running directly from a terminal, just stay unattended
+    if defined ClientName if not defined SESSIONNAME set UNATTENDED=true
+
+    goto :EOF
+
+:setup_title
+    :: Arcane method of detecting whether our session isn't a direct cmd.exe one
+    if not "%CMDCMDLINE:"=%"=="%ComSpec:"=% " title %PROGRAM% %VERSION%
+
+    goto :EOF
+
+:error &:: (message)
+    >&2 echo:%RED%%~1%RESET%
+
+    goto :EOF
+
+:info &:: (message)
+    echo:%YELLOW%%~1%RESET%
+
+    goto :EOF
+
+:halt
+    ping localhost >nul 2>&1
+
+    goto :EOF
+
+:stop
+    if not "%UNATTENDED%"=="true" call :halt
+
+    goto :EOF
+
+:usage
+    echo:Usage: %PROGRAM% [-h ^| -u ^| --version]
+    echo:    Accepts licenses for all available packages of Android SDK.
+    echo:
+    echo:    Optional arguments:
+    echo:      -h, --help, -?    show this help message and exit
+    echo:      -u, --unattended  run this script unattended (don't halt)
+    echo:      --version         output version information and exit
+    echo:
+    echo:    Exit status:
+    echo:      0                 successful program execution
+    echo:      1                 this dialog was displayed
+    echo:      2                 sdkmanager discovery failed
+    echo:      3                 sdkmanager execution failed
+
+    exit /b 1
+
+:version
+    echo:%VERSION%
+
+    exit /b 0
+
+:main
+    call :setup_colors
+    call :setup_term
+    call :setup_title
+
+    call :find_sdkmanager "sdkmanager"
+
+    if %ERRORLEVEL% equ 9009 (
+        call :error "Error: sdkmanager discovery failed:"
+        call :error
+        call :error "    - `sdkmanager` command could not be found in your PATH;"
+        call :error "    - ANDROID_SDK_ROOT was not set or was set incorrectly"
+        call :error
+        call :error "Last location checked: %sdkmanager"
+
+        call :stop
+        exit /b 2
+    )
+
+    if %ERRORLEVEL% neq 0 (
+        call :error "Error: sdkmanager execution failed (exit code: %ERRORLEVEL%)"
+
+        call :stop
+        exit /b 3
+    )
+
+    call :accept_licenses "%sdkmanager%"
+    call :stop
+
+@endlocal & exit /b 0
