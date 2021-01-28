@@ -227,7 +227,7 @@ goto :main
         call :error "    - `sdkmanager` command could not be found in your PATH;"
         call :error "    - ANDROID_SDK_ROOT was not set or was set incorrectly"
         call :error
-        call :error "Last location checked: %sdkmanager"
+        call :error "Last location checked: %sdkmanager%"
 
         call :stop
         exit /b 2
