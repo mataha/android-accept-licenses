@@ -96,7 +96,7 @@ goto :main
     set /a __offset=2 + 5
     call :count_licenses "%~1" "licenses" %__offset%
 
-    if not defined licenses (
+    if %licenses% equ 0 (
         call :info "There are no SDK package licenses to accept."
         @endlocal & goto :EOF
     )
@@ -143,7 +143,7 @@ goto :main
     set __token=!__tokens[%__token_index%]!
 
     :: Sanitize this, as it most likely contains a carriage return character
-    set /a "__licenses=%__token%" 2>nul
+    set /a "__licenses=%__token%" 2>nul || set /a __licenses=0
 
     @endlocal & set "%~2=%__licenses%" & goto :EOF
 
