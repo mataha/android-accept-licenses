@@ -67,11 +67,18 @@ goto :main
     set __sdkmanager=sdkmanager.bat
     where /q %__sdkmanager% 2>nul && goto :command_exists
 
-    :: Take 2: check if we can find `sdkmanager` from ANDROID_SDK_ROOT
-    if not defined ANDROID_SDK_ROOT (
+    :: Take 2: check if we can find `sdkmanager` command from ANDROID_SDK_ROOT
+    :: https://developer.android.com/studio/command-line/variables#envar
+    if not defined ANDROID_HOME (
         @rem Default Windows installation location, perhaps?
-        set ANDROID_SDK_ROOT=%LOCALAPPDATA%\Android\Sdk
+        set ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk
+    ) else (
+        if not exist "%ANDROID_HOME%\.knownPackages" (
+            set ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk
+        )
     )
+    :: https://developer.android.com/studio/command-line/variables
+    if not defined ANDROID_SDK_ROOT set ANDROID_SDK_ROOT=%ANDROID_HOME%
     set __android_sdk_root=%ANDROID_SDK_ROOT:"=%
 
     :: Take 2a: latest SDK Command-Line Tools package directory
