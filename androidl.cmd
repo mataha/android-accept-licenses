@@ -77,8 +77,13 @@ goto :main
             set ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk
         )
     )
+
     :: https://developer.android.com/studio/command-line/variables
-    if not defined ANDROID_SDK_ROOT set ANDROID_SDK_ROOT=%ANDROID_HOME%
+    if not defined ANDROID_SDK_ROOT (
+        echo:%YELLOW%ANDROID_SDK_ROOT not defined, using: %ANDROID_HOME%%RESET%
+        echo:
+        set ANDROID_SDK_ROOT=%ANDROID_HOME%
+    )
     set __android_sdk_root=%ANDROID_SDK_ROOT:"=%
 
     :: Take 2a: latest SDK Command-Line Tools package directory
@@ -104,7 +109,7 @@ goto :main
     call :count_licenses "%~1" "licenses" %__offset%
 
     if %licenses% equ 0 (
-        call :info "There are no SDK package licenses to accept."
+        echo:%GREEN%There are no SDK package licenses to accept.%RESET%
         @endlocal & goto :EOF
     )
 
@@ -115,7 +120,7 @@ goto :main
     call "%~1" --licenses <"%stream%" >nul 2>&1 &:: Always returns 0 unless ^C
     call :delete_stream "%stream%"
 
-    call :info "All (%licenses%) SDK package licenses have been accepted."
+    echo:%GREEN%All (%licenses%) SDK package licenses have been accepted.%RESET%
 
     @endlocal & goto :EOF
 
@@ -157,10 +162,12 @@ goto :main
 :setup_colors
     ver | find /i "Version 10.0" >nul 2>&1 && if not defined ClientName (
         set RED=[31m
+        set GREEN=[32m
         set YELLOW=[33m
         set RESET=[0m
     ) || (
         set RED=
+        set GREEN=
         set YELLOW=
         set RESET=
     )
@@ -181,11 +188,6 @@ goto :main
 
 :error &:: (message)
     >&2 echo:%RED%%~1%RESET%
-
-    goto :EOF
-
-:info &:: (message)
-    echo:%YELLOW%%~1%RESET%
 
     goto :EOF
 
