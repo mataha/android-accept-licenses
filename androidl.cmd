@@ -77,11 +77,9 @@ goto :main
             set ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk
         )
     )
-
     :: https://developer.android.com/studio/command-line/variables
     if not defined ANDROID_SDK_ROOT (
-        echo:%YELLOW%ANDROID_SDK_ROOT not defined, using: %ANDROID_HOME%%RESET%
-        echo:
+        call :warning "ANDROID_SDK_ROOT not defined, using: %ANDROID_HOME%"
         set ANDROID_SDK_ROOT=%ANDROID_HOME%
     )
     set __android_sdk_root=%ANDROID_SDK_ROOT:"=%
@@ -109,7 +107,7 @@ goto :main
     call :count_licenses "%~1" "licenses" %__offset%
 
     if %licenses% equ 0 (
-        echo:%GREEN%There are no SDK package licenses to accept.%RESET%
+        call :info "There are no SDK package licenses to accept."
         @endlocal & goto :EOF
     )
 
@@ -120,7 +118,7 @@ goto :main
     call "%~1" --licenses <"%stream%" >nul 2>&1 &:: Always returns 0 unless ^C
     call :delete_stream "%stream%"
 
-    echo:%GREEN%All (%licenses%) SDK package licenses have been accepted.%RESET%
+    call :info "All (%licenses%) SDK package licenses have been accepted."
 
     @endlocal & goto :EOF
 
@@ -188,6 +186,16 @@ goto :main
 
 :error &:: (message)
     >&2 echo:%RED%%~1%RESET%
+
+    goto :EOF
+
+:warning &:: (message)
+    >&2 echo:%YELLOW%%~1%RESET%
+
+    goto :EOF
+
+:info &:: (message)
+    echo:%GREEN%%~1%RESET%
 
     goto :EOF
 
