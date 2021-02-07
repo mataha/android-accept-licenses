@@ -200,9 +200,16 @@ goto :main
     goto :EOF
 
 :halt
-    ping localhost >nul 2>&1
+    @setlocal
 
-    goto :EOF
+    set /a __=3 &:: same delay as `ping [-n 4] localhost`
+
+    set /a "__timeout=%~1" 2>nul || set /a __timeout=__
+    if %__timeout% equ 0 if not 0%~1 equ 00 set /a __timeout=__
+
+    timeout /t %__timeout% 2>nul
+
+    @endlocal & goto :EOF
 
 :stop
     if not "%UNATTENDED%"=="true" call :halt
@@ -250,10 +257,15 @@ goto :main
 
     exit /b 3
 
-:main
+:setup
     call :setup_colors
     call :setup_term
     call :setup_title
+
+    goto :EOF
+
+:main
+    call :setup
 
     call :find_sdkmanager "SDKMANAGER"
     if %ERRORLEVEL% equ 9009 goto :failed_discovery
