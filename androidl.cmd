@@ -205,7 +205,7 @@ goto :main
     set /a __=3 &:: same delay as `ping [-n 4] localhost`
 
     set /a "__timeout=%~1" 2>nul || set /a __timeout=__
-    if %__timeout% equ 0 if not 0%~1 equ 00 set /a __timeout=__
+    if %__timeout% equ 0 if not 0%1 equ 00 set /a __timeout=__
 
     timeout /t %__timeout% 2>nul
 
