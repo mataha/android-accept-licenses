@@ -23,7 +23,7 @@
 @setlocal DisableDelayedExpansion EnableExtensions
 
 set PROGRAM=%~n0
-set VERSION=0.0.1
+set VERSION=0.0.2
 
 if not "%~2"==""            goto :usage &:: only one argument allowed
 if /i "%~1"=="-h"           goto :usage
