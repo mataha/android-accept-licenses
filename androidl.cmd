@@ -49,6 +49,7 @@ goto :main
 
     for /l %%u in (0, 1, 5) do set __filename=!__filename!!RANDOM!
     set __stream=%__temp%\%__filename%%__extension%
+    type nul >%__stream% 2>nul
 
     set __fill=y
     for /l %%u in (1, 1, %~2) do echo:%__fill%>>%__stream%
