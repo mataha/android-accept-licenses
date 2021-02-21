@@ -38,7 +38,7 @@ set LF=^
 goto :main
 
 
-:create_stream &:: (*file, lines)
+:create_stream (*file, content, lines)
     @setlocal EnableDelayedExpansion
 
     set __extension=.yes
@@ -51,17 +51,16 @@ goto :main
     set __stream=%__temp%\%__filename%%__extension%
     type nul >%__stream% 2>nul
 
-    set __fill=y
-    for /l %%u in (1, 1, %~2) do echo:%__fill%>>%__stream%
+    for /l %%u in (1, 1, %~3) do echo:%~2>>%__stream%
 
     @endlocal & set "%~1=%__stream%" & goto :EOF
 
-:delete_stream &:: (file)
+:delete_stream (file)
     if not "%~1"=="" del /f /q "%~1" 2>nul
 
     goto :EOF
 
-:find_sdkmanager &:: (*sdkmanager) |> errorlevel
+:find_sdkmanager (*sdkmanager) -> errorlevel
     @setlocal
 
     :: Take 1: try to find `sdkmanager` in our PATH (or in this directory)
@@ -101,10 +100,10 @@ goto :main
 
     endlocal & set "%~1=%__sdkmanager%" & exit /b %__errorlevel%
 
-:accept_licenses &:: (sdkmanager)
+:accept_licenses (sdkmanager)
     @setlocal
 
-    set /a __offset=2 + 5
+    set /a __offset=2 + 5 &:: total licenses (2 tokens) + info string (5 tokens)
     call :count_licenses "%~1" "licenses" %__offset%
 
     if %licenses% equ 0 (
@@ -115,15 +114,15 @@ goto :main
     :: Account for 'Review licenses that have not been accepted (y/N)?' prompt
     set /a __prompts=licenses + 1
 
-    call :create_stream "stream" %__prompts%
-    call "%~1" --licenses <"%stream%" >nul 2>&1 &:: Always returns 0 unless ^C
+    call :create_stream "stream" "y" %__prompts%
+    call "%~1" --licenses <"%stream%" >nul 2>&1 &:: always returns 0 unless ^C
     call :delete_stream "%stream%"
 
     call :info "All (%licenses%) SDK package licenses have been accepted."
 
     @endlocal & goto :EOF
 
-:count_licenses &:: (sdkmanager, *licenses, offset)
+:count_licenses (sdkmanager, *licenses, offset)
     @setlocal EnableDelayedExpansion
 
     set "__pattern=SDK package license"
@@ -185,17 +184,17 @@ goto :main
 
     goto :EOF
 
-:error &:: (message)
+:error (message)
     >&2 echo:%RED%%~1%RESET%
 
     goto :EOF
 
-:warning &:: (message)
+:warning (message)
     >&2 echo:%YELLOW%%~1%RESET%
 
     goto :EOF
 
-:info &:: (message)
+:info (message)
     echo:%GREEN%%~1%RESET%
 
     goto :EOF
