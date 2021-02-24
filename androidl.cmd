@@ -44,7 +44,7 @@ goto :main
     set stream=%temporary%\%filename%%extension%
     type nul >%stream% 2>nul
 
-    for /l %%u in (1, 1, %~3) do echo:%~2>>%stream%
+    if not "%~2"=="" for /l %%u in (1, 1, %~3) do echo:%~2>>%stream%
 
     @endlocal & set "%~1=%stream%" & goto :EOF
 
