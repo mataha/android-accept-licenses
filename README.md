@@ -1,4 +1,4 @@
-# ``android-licenses-windows``
+# ``android-accept-licenses``
 
 Automatic Android SDK package license acceptance for Windows, because it's
 a chore and life is too short to do it manually.
