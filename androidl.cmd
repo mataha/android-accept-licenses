@@ -25,13 +25,6 @@
 set PROGRAM=%~n0
 set VERSION=0.0.2
 
-if not "%~2"==""            goto :usage &:: only one argument allowed
-if /i "%~1"=="-h"           goto :usage
-if /i "%~1"=="--help"       goto :usage
-if /i "%~1"=="-?"           goto :usage
-if /i "%~1"=="--version"    goto :version
-if /i "%~1"=="-u"           set UNATTENDED=true
-if /i "%~1"=="--unattended" set UNATTENDED=true
 set LF=^
 
 
@@ -41,19 +34,19 @@ goto :main
 :create_stream (*file, content, lines)
     @setlocal EnableDelayedExpansion
 
-    set __extension=.yes
+    set extension=.yes
 
-    set __temp=%TEMP%
-    if "%__temp%"=="" set __temp=.
-    for %%i in ("%__temp%") do set __temp=%%~fi
+    set temporary=%TEMP%
+    if "%temporary%"=="" set temporary=.
+    for %%i in ("%temporary%") do set temporary=%%~fi
 
-    for /l %%u in (0, 1, 5) do set __filename=!__filename!!RANDOM!
-    set __stream=%__temp%\%__filename%%__extension%
-    type nul >%__stream% 2>nul
+    for /l %%u in (0, 1, 5) do set filename=!filename!!RANDOM!
+    set stream=%temporary%\%filename%%extension%
+    type nul >%stream% 2>nul
 
-    for /l %%u in (1, 1, %~3) do echo:%~2>>%__stream%
+    for /l %%u in (1, 1, %~3) do echo:%~2>>%stream%
 
-    @endlocal & set "%~1=%__stream%" & goto :EOF
+    @endlocal & set "%~1=%stream%" & goto :EOF
 
 :delete_stream (file)
     if not "%~1"=="" del /f /q "%~1" 2>nul
@@ -63,9 +56,11 @@ goto :main
 :find_sdkmanager (*sdkmanager) -> errorlevel
     @setlocal
 
+    set binary=sdkmanager.bat
+
     :: Take 1: try to find `sdkmanager` in our PATH (or in this directory)
-    set __sdkmanager=sdkmanager.bat
-    where /q %__sdkmanager% 2>nul && goto :command_exists
+    set sdkmanager=%binary%
+    where /q %sdkmanager% 2>nul && goto :command_exists
 
     :: Take 2: check if we can find `sdkmanager` command from ANDROID_SDK_ROOT
     :: https://developer.android.com/studio/command-line/variables#envar
@@ -77,87 +72,97 @@ goto :main
             set ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk
         )
     )
+
     :: https://developer.android.com/studio/command-line/variables
     if not defined ANDROID_SDK_ROOT (
         call :warning "ANDROID_SDK_ROOT not defined, using: %ANDROID_HOME%"
         set ANDROID_SDK_ROOT=%ANDROID_HOME%
     )
-    set __android_sdk_root=%ANDROID_SDK_ROOT:"=%
+    set android_sdk_root=%ANDROID_SDK_ROOT:"=%
 
     :: Take 2a: latest SDK Command-Line Tools package directory
     :: https://developer.android.com/studio/command-line/#tools-sdk
-    set __sdkmanager=%__android_sdk_root%\cmdline-tools\latest\bin\sdkmanager.bat
-    if exist "%__sdkmanager%" goto :command_exists
+    set sdkmanager=%android_sdk_root%\cmdline-tools\latest\bin\%binary%
+    if exist "%sdkmanager%" goto :command_exists
 
     :: Take 2b: legacy SDK Tools package directory (last revision: 26.1.1)
     :: https://developer.android.com/studio/releases/sdk-tools
-    set __sdkmanager=%__android_sdk_root%\tools\bin\sdkmanager.bat
-    if exist "%__sdkmanager%" goto :command_exists
+    set sdkmanager=%android_sdk_root%\tools\bin\%binary%
+    if exist "%sdkmanager%" goto :command_exists
 
     :command_exists
-        call %__sdkmanager% --version >nul 2>&1
-        set __errorlevel=%ERRORLEVEL%
+        call %sdkmanager% --version >nul 2>&1
+        set error_level=%ERRORLEVEL%
 
-    endlocal & set "%~1=%__sdkmanager%" & exit /b %__errorlevel%
+    @endlocal & set "%~1=%sdkmanager%" & exit /b %error_level%
 
 :accept_licenses (sdkmanager)
     @setlocal
 
-    set /a __offset=2 + 5 &:: total licenses (2 tokens) + info string (5 tokens)
-    call :count_licenses "%~1" "licenses" %__offset%
+    set /a offset=2 + 5 &:: total licenses (2 tokens) + info string (5 tokens)
+    call :count_licenses "%~1" offset "licenses"
 
-    if %licenses% equ 0 (
-        call :info "There are no SDK package licenses to accept."
-        @endlocal & goto :EOF
-    )
+    if %licenses% equ 0 goto :report
 
     :: Account for 'Review licenses that have not been accepted (y/N)?' prompt
-    set /a __prompts=licenses + 1
+    set /a prompts=licenses + 1
 
-    call :create_stream "stream" "y" %__prompts%
-    call "%~1" --licenses <"%stream%" >nul 2>&1 &:: always returns 0 unless ^C
+    call :create_stream "stream" "y" %prompts%
+    call "%~1" --licenses <"%stream%" >nul 2>&1
     call :delete_stream "%stream%"
+    goto :report
 
-    call :info "All (%licenses%) SDK package licenses have been accepted."
+    :report
+        if %licenses% gtr 0 (
+            call :info "All (%licenses%) SDK package licenses have been accepted."
+        ) else (
+            call :info "There are no SDK package licenses to accept."
+        )
 
     @endlocal & goto :EOF
 
-:count_licenses (sdkmanager, *licenses, offset)
+:count_licenses (sdkmanager, *offset, *licenses)
     @setlocal EnableDelayedExpansion
 
-    set "__pattern=SDK package license"
+    set "pattern=SDK package license"
 
-    set "__echo=echo:N"
-    set "__call=call "%~1" --licenses 2^>nul"
-    set "__find=find /i "%__pattern%" 2^>nul"
+    set "echo=echo:N"
+    set "call=call "%~1" --licenses 2^>nul"
+    set "find=find /i "%pattern%" 2^>nul"
 
-    set "__command=%__echo%^|%__call%^|%__find%"
+    set "command=%echo%^|%call%^|%find%"
+    set /a length=0
 
-    for /f "usebackq eol= tokens=*" %%i in (`%__command%`) do (
+    for /f "usebackq eol= tokens=*" %%i in (`%command%`) do (
         @rem Can be potentially nasty if the command's output contains
         @rem exclamation marks, but so far Google has never put them there.
         @rem If it ever becomes an issue: https://stackoverflow.com/a/8162578
-        set "__line=%%i"
-
-        set /a __length=0
+        set "line=%%i"
 
         for %%l in ("!LF!") do (
-            for /f "eol= " %%w in ("!__line: =%%~l!") do (
-                set /a __length+=1
-                set __tokens[!__length!]=%%w
+            for /f "eol= " %%w in ("!line: =%%~l!") do (
+                set /a length+=1
+                set tokens[!length!]=%%w
             )
         )
     )
 
-    set /a __token_index=__length - %~3
-    set __token=!__tokens[%__token_index%]!
+    set /a token_index=length - %~2
+    set token=!tokens[%token_index%]!
 
     :: Sanitize this, as it most likely contains a carriage return character
-    set /a "__licenses=%__token%" 2>nul || set /a __licenses=0
+    set /a "licenses=%token%" 2>nul || set /a licenses=0
 
-    @endlocal & set "%~2=%__licenses%" & goto :EOF
+    @endlocal & set "%~3=%licenses%" & goto :EOF
 
-:setup_colors
+:setup ()
+    call :setup_colors
+    call :setup_term
+    call :setup_title
+
+    goto :EOF
+
+:setup_colors ()
     ver | find /i "Version 10.0" >nul 2>&1 && if not defined ClientName (
         set RED=[31m
         set GREEN=[32m
@@ -172,46 +177,43 @@ goto :main
 
     goto :EOF
 
-:setup_term
+:setup_term ()
     :: If we're not running directly from a terminal, just stay unattended
     if defined ClientName if not defined SESSIONNAME set UNATTENDED=true
 
     goto :EOF
 
-:setup_title
+:setup_title () #title
     :: Arcane method of detecting whether our session isn't a direct cmd.exe one
     if not "%CMDCMDLINE:"=%"=="%ComSpec:"=% " title %PROGRAM% %VERSION%
 
     goto :EOF
 
-:error (message)
+:error (message) #io
     >&2 echo:%RED%%~1%RESET%
 
     goto :EOF
 
-:warning (message)
+:warning (message) #io
     >&2 echo:%YELLOW%%~1%RESET%
 
     goto :EOF
 
-:info (message)
+:info (message) #io
     echo:%GREEN%%~1%RESET%
 
     goto :EOF
 
-:halt
+:halt ()
     @setlocal
 
-    set /a __=3 &:: same delay as `ping [-n 4] localhost`
+    set /a delay=3 &:: same delay as `ping [-n 4] localhost`
 
-    set /a "__timeout=%~1" 2>nul || set /a __timeout=__
-    if %__timeout% equ 0 if not 0%1 equ 00 set /a __timeout=__
-
-    timeout /t %__timeout% 2>nul
+    timeout /t %delay% 2>nul
 
     @endlocal & goto :EOF
 
-:stop
+:stop ()
     if not "%UNATTENDED%"=="true" call :halt
 
     goto :EOF
@@ -222,24 +224,31 @@ goto :main
     exit /b 0
 
 :usage
-    echo:Usage: %PROGRAM% [-h ^| -u ^| --version]
+    echo:Usage: %PROGRAM% [-h] [--unattended] [--version]
     echo:    Accepts licenses for all available packages of Android SDK.
     echo:
     echo:    Optional arguments:
     echo:      -h, --help, -?    show this help message and exit
-    echo:      -u, --unattended  run this script unattended (don't halt)
+    echo:      --unattended, -u  run this script unattended (don't halt)
     echo:      --version         output version information and exit
     echo:
     echo:    Exit status:
     echo:      0                 successful program execution
     echo:      1                 this dialog was displayed
-    echo:      2                 sdkmanager discovery failed
-    echo:      3                 sdkmanager execution failed
+    echo:      2                 unrecognized argument combination
+    echo:      3                 sdkmanager discovery failed
+    echo:      4                 sdkmanager execution failed
 
     exit /b 1
 
+:unrecognized
+    call :error "%PROGRAM%: error: unrecognized argument combination: %*"
+    call :error "Try '%PROGRAM% --help' for more information."
+
+    exit /b 2
+
 :failed_discovery
-    call :error "Error: sdkmanager discovery failed:"
+    call :error "%PROGRAM%: error: sdkmanager discovery failed:"
     call :error
     call :error "    - `sdkmanager` command could not be found in your PATH;"
     call :error "    - ANDROID_SDK_ROOT was not set or was set incorrectly"
@@ -248,24 +257,30 @@ goto :main
 
     call :stop
 
-    exit /b 2
+    exit /b 3
 
 :failed_execution
-    call :error "Error: sdkmanager execution failed (exit code: %ERRORLEVEL%)"
+    call :error "%PROGRAM%: error: sdkmanager execution failed (exit code: %ERRORLEVEL%)"
 
     call :stop
 
-    exit /b 3
-
-:setup
-    call :setup_colors
-    call :setup_term
-    call :setup_title
-
-    goto :EOF
+    exit /b 4
 
 :main
-    call :setup
+    :parse
+        set UNATTENDED=
+
+        if "%~1"=="-h"           goto :usage
+        if "%~1"=="--help"       goto :usage
+        if "%~1"=="-?"           goto :usage
+        if "%~1"=="--version"    goto :version
+        if "%~1"=="--unattended" set "UNATTENDED=true" & goto :init
+        if "%~1"=="-u"           set "UNATTENDED=true" & goto :init
+
+        if not "%*"==""          goto :unrecognized
+
+    :init
+        call :setup
 
     call :find_sdkmanager "SDKMANAGER"
     if %ERRORLEVEL% equ 9009 goto :failed_discovery

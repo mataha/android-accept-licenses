@@ -13,19 +13,20 @@ whatsoever.
 ## Usage
 
 ```
-Usage: androidl [-h | -u | --version]
+Usage: androidl [-h] [--unattended] [--version]
     Accepts licenses for all available packages of Android SDK.
 
     Optional arguments:
       -h, --help, -?    show this help message and exit
-      -u, --unattended  run this script unattended (don't halt)
+      --unattended, -u  run this script unattended (don't halt)
       --version         output version information and exit
 
     Exit status:
       0                 successful program execution
       1                 this dialog was displayed
-      2                 sdkmanager discovery failed
-      3                 sdkmanager execution failed
+      2                 unrecognized argument combination
+      3                 sdkmanager discovery failed
+      4                 sdkmanager execution failed
 ```
 
 ## Alternatives
