@@ -229,8 +229,8 @@
 
     goto :EOF
 
-:halt () #sync
-    timeout /t 3 2>nul
+:halt (timeout) #sync
+    timeout /t "%~1" 2>nul || timeout /t -1 2>nul
 
     goto :EOF
 
@@ -308,6 +308,6 @@
         call :info "There are no SDK package licenses to accept."
     )
 
-    if not "%UNATTENDED%"=="true" call :halt
+    if not "%UNATTENDED%"=="true" call :halt 3
 
 @endlocal & exit /b 0
