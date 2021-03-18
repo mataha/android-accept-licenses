@@ -23,7 +23,7 @@
 @setlocal DisableDelayedExpansion EnableExtensions
 
 @set PROGRAM=%~n0
-@set VERSION=1.0.0
+@set VERSION=1.0.1
 
 @goto :main
 
