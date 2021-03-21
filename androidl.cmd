@@ -33,7 +33,7 @@
 
     set timestamp=
     for /f "skip=1 delims=.-+ " %%t in ('wmic os get localdatetime 2^>nul') do (
-        set timestamp=%%~t
+        set timestamp=%%t
         goto :break
     )
     :break
