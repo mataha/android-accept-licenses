@@ -33,11 +33,21 @@ Usage: androidl [-h] [--unattended] [--version]
 
 ## Alternatives
 
+### Using WSL
+
 Assuming `sdkmanager` is in your PATH and you have [WSL][1] installed and
 configured, the following one-liner should work with every default distro:
 
 ```batchfile
 wsl --exec yes "y" | sdkmanager --licenses
+```
+
+### Using Git Bash
+
+Assuming [Git for Windows](https://github.com/git-for-windows/git) is installed, and in your path, you can use `bash.exe` that comes with it
+
+```batchfile
+bash -c "yes y | C:/Android/android-sdk/tools/bin/sdkmanager.bat --licenses"
 ```
 
 Note that `yes` isn't guaranteed to output `y`, hence the additional argument.
