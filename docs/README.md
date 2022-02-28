@@ -9,7 +9,7 @@ Should work with Windows Vista and up.
 
 ## Installation
 
-Get [the script](./src/androidl.cmd), run it, voilà. No dependencies required
+Get [the script](../src/androidl.cmd), run it, voilà. No dependencies required
 whatsoever.
 
 ## Usage
@@ -64,7 +64,7 @@ spontaneously explodes. Now it won't have to.
 
 ## License
 
-MIT. See [LICENSE](./LICENSE).
+MIT. See [LICENSE](../LICENSE).
 
 [1]: https://docs.microsoft.com/en-us/windows/wsl/about
 [2]: https://gitforwindows.org/
