@@ -239,7 +239,7 @@
     goto :EOF
 
 :setup_title #[title] ()
-    :: Arcane method of detecting whether our session isn't a direct cmd.exe one
+    :: Arcane method of detecting whether our session is an indirect cmd.exe one
     if not "%CMDCMDLINE:"=%"=="%ComSpec:"=% " title %PROGRAM% %VERSION%
 
     goto :EOF
