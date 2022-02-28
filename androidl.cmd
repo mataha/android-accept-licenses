@@ -258,13 +258,13 @@
     exit /b 1
 
 :parse_error
-    >&2 echo:%PROGRAM%: error: unrecognized argument combination: %*
+    >&2 echo:%SCRIPT%: error: unrecognized argument combination: %*
     >&2 echo:Try '%PROGRAM% --help' for more information.
 
     exit /b 2
 
 :failed_discovery
-    call :error "%PROGRAM%: error: sdkmanager discovery failed:"
+    call :error "%SCRIPT%: error: sdkmanager discovery failed:"
     call :error
     call :error "    - `sdkmanager` command could not be found in your PATH;"
     call :error "    - ANDROID_SDK_ROOT was not set or was set incorrectly"
@@ -276,13 +276,15 @@
     exit /b 3
 
 :failed_execution
-    call :error "%PROGRAM%: error: sdkmanager execution failed (exit code: %ERRORLEVEL%)"
+    call :error "%SCRIPT%: error: sdkmanager execution failed (exit code: %ERRORLEVEL%)"
 
     if not "%UNATTENDED%"=="true" call :halt
 
     exit /b 4
 
 :main
+    set SCRIPT=%~n0
+
     if "%~1"=="-h"           goto :usage
     if "%~1"=="--help"       goto :usage
     if "%~1"=="--version"    goto :version
