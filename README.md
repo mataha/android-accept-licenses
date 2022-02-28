@@ -33,10 +33,12 @@ Usage: androidl [-h] [--unattended] [--version]
 
 ## Alternatives
 
+All of the below require `sdkmanager` to be in your PATH.
+
 ### Using WSL
 
-Assuming `sdkmanager` is in your PATH and you have [WSL][1] installed and
-configured, the following one-liner should work with every default distro:
+With [WSL][1] installed and configured, the following one-liner should work on
+every default distribution:
 
 ```batchfile
 wsl --exec yes "y" | sdkmanager --licenses
@@ -44,13 +46,14 @@ wsl --exec yes "y" | sdkmanager --licenses
 
 ### Using Git Bash
 
-Assuming [Git for Windows](https://github.com/git-for-windows/git) is installed, and in your path, you can use `bash.exe` that comes with it
+[Git for Windows][2] provides a bash emulation that, assuming it's installed
+and configured to be in your PATH, can be used with the following one-liner:
 
 ```batchfile
-bash -c "yes y | C:/Android/android-sdk/tools/bin/sdkmanager.bat --licenses"
+bash -c "yes 'y' | sdkmanager --licenses"
 ```
 
-Note that `yes` isn't guaranteed to output `y`, hence the additional argument.
+*Note that `yes` isn't guaranteed to output `y`, hence the additional argument.*
 
 ## Rationale
 
@@ -64,3 +67,4 @@ spontaneously explodes. Now it won't have to.
 MIT. See [LICENSE](./LICENSE).
 
 [1]: https://docs.microsoft.com/en-us/windows/wsl/about
+[2]: https://gitforwindows.org/
