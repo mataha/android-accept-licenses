@@ -46,7 +46,7 @@
 
     endlocal & set "%~1=%filename%" & goto :EOF
 
-:create_stream #[io] (*file, content, lines)
+:create_stream #[io] (*file, content, lines = 2)
     setlocal EnableDelayedExpansion
 
     set temporary=%TEMP%
@@ -59,7 +59,8 @@
     set stream=%temporary%\%filename%%extension%
     type nul >"%stream%" 2>nul
 
-    if not "%~2"=="" for /l %%u in (1, 1, %~3) do echo:%~2>>"%stream%"
+    set /a "lines=%~3" 2>nul || set /a "lines=2" >nul 2>&1
+    if not "%~2"=="" for /l %%u in (1, 1, %lines%) do >>"%stream%" 2>nul echo:%~2
 
     endlocal & set "%~1=%stream%" & goto :EOF
 
