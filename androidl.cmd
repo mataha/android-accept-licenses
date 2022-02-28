@@ -1,5 +1,3 @@
-@if "%DEBUG%"=="" @echo off
-::
 :: Copyright (c) mataha and contributors
 :: 
 :: Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,7 +17,9 @@
 :: LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 :: FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 :: IN THE SOFTWARE.
-::
+
+@if "%DEBUG%"=="" @echo off
+
 @setlocal DisableDelayedExpansion EnableExtensions
 
 @set PROGRAM=%~n0
@@ -28,12 +28,12 @@
 @goto :main
 
 
-:generate_filename (*filename, prefix, suffix)
+:generate_filename (*filename, prefix = "", suffix = "")
     setlocal
 
     set timestamp=
     for /f "skip=1 delims=.-+ " %%t in ('wmic os get localdatetime 2^>nul') do (
-        set timestamp=%%t
+        set "timestamp=%%t"
         goto :break
     )
     :break
@@ -45,14 +45,14 @@
 
     endlocal & set "%~1=%filename%" & goto :EOF
 
-:create_stream (*file, content, lines) #io
+:create_stream #[io] (*file, content, lines)
     setlocal EnableDelayedExpansion
 
     set temporary=%TEMP%
     if "%temporary%"=="" set temporary=.
     for %%i in ("%temporary%") do set temporary=%%~fi
 
-    call :generate_filename "filename" "%PROGRAM%" !RANDOM!
+    call :generate_filename filename "%PROGRAM%" "!RANDOM!"
     set extension=.yes
 
     set stream=%temporary%\%filename%%extension%
@@ -62,7 +62,7 @@
 
     endlocal & set "%~1=%stream%" & goto :EOF
 
-:delete_stream (*file) #io
+:delete_stream #[io] (*file)
     setlocal EnableDelayedExpansion
 
     set stream=!%~1!
@@ -105,7 +105,7 @@
     where /q %sdkmanager% 2>nul && goto :command_exists
 
     :: Take 2: check whether we can find `sdkmanager` from ANDROID_SDK_ROOT
-    call :find_android_sdk_root "android_sdk_root"
+    call :find_android_sdk_root android_sdk_root
 
     :: Take 2a: latest SDK Command-Line Tools package directory
     :: https://developer.android.com/studio/command-line/#tools-sdk
@@ -127,15 +127,15 @@
     setlocal EnableDelayedExpansion
 
     set /a offset=2 + 5 &:: total licenses (2 tokens) + info string (5 tokens)
-    call :count_licenses "%~1" "licenses" offset
+    call :count_licenses %~1 licenses offset
 
     if %licenses% gtr 0 (
         @rem Account for 'Review licenses that have not been accepted (y/N)?'
         set /a prompts=licenses + 1
 
-        call :create_stream "stream" "y" !prompts!
+        call :create_stream stream "y" !prompts!
         call "!%~1!" --licenses <"!stream!" >nul 2>&1
-        call :delete_stream "stream"
+        call :delete_stream stream
     ) else (
         set /a licenses=0
     )
@@ -176,14 +176,14 @@
 
     endlocal & set "%~2=%licenses%" & goto :EOF
 
-:setup () #global
+:setup #[global, title] ()
     call :setup_colors
     call :setup_term
     call :setup_title
 
     goto :EOF
 
-:setup_colors () #global
+:setup_colors #[global] ()
     for /f "usebackq" %%c in (`echo:prompt $E ^| cmd 2^>nul`) do set esc=%%c
 
     if not defined ClientName ver | find /i "Version 10.0" >nul 2>&1 && (
@@ -200,7 +200,7 @@
 
     set "esc=" & goto :EOF
 
-:setup_term () #global
+:setup_term #[global] ()
     if defined ClientName set UNATTENDED=true
 
     set LF=^
@@ -208,28 +208,28 @@
 
     goto :EOF
 
-:setup_title () #title
+:setup_title #[title] ()
     :: Arcane method of detecting whether our session isn't a direct cmd.exe one
     if not "%CMDCMDLINE:"=%"=="%ComSpec:"=% " title %PROGRAM% %VERSION%
 
     goto :EOF
 
-:error (message) #io
+:error #[io] (message)
     >&2 echo:%RED%%~1%RESET%
 
     goto :EOF
 
-:warning (message) #io
+:warning #[io] (message)
     >&2 echo:%YELLOW%%~1%RESET%
 
     goto :EOF
 
-:info (message) #io
+:info #[io] (message)
     echo:%GREEN%%~1%RESET%
 
     goto :EOF
 
-:halt (timeout) #sync
+:halt #[sync] (timeout = -1)
     timeout /t "%~1" 2>nul || timeout /t -1 2>nul
 
     goto :EOF
@@ -296,11 +296,11 @@
 
     call :setup
 
-    call :find_sdkmanager "SDKMANAGER"
+    call :find_sdkmanager SDKMANAGER
     if %ERRORLEVEL% equ 9009 goto :failed_discovery
     if %ERRORLEVEL% neq 0    goto :failed_execution
 
-    call :accept_licenses "SDKMANAGER" "licenses"
+    call :accept_licenses SDKMANAGER licenses
 
     if %licenses% gtr 0 (
         call :info "All (%licenses%) SDK package licenses have been accepted."
