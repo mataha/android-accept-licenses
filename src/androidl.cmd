@@ -178,7 +178,35 @@
 
     endlocal & set "%~2=%licenses%" & goto :EOF
 
-:setup #[global, title] ()
+:is_windows_10_or_higher () -> errorlevel
+    ::      A short list of common Windows versions:
+    ::
+    :: +--------------+-----------+---------+------------+
+    :: | Product name | ReleaseId | Version |   Semver   |
+    :: +--------------+-----------+---------+------------+
+    :: |  Windows 10  |   1507    |         | 10.0.10240 |
+    :: |              |   1511    |         |      10586 |
+    :: |              |   1607    |         |      14393 |
+    :: |              |   1703    |         |      15063 |
+    :: |              |   1709    |         |      16299 |
+    :: |              |   1803    |         |      17134 |
+    :: |              |   1809    |         |      17763 |
+    :: |              |   1903    |         |      18362 |
+    :: |              |   1909    |         |      18363 |
+    :: |              |   2004    |         |      19041 |
+    :: |              |   2009    |  20H2   |      19042 |
+    :: |              |           |  21H1   |      19043 |
+    :: |              |           |  21H2   |      19044 |
+    :: |  Windows 11  |   2009    |  21H2   | 10.0.22000 |
+    :: +--------------+-----------+---------+------------+
+    ::
+    :: Thus, "[Version 10." from `ver` will match Windows 11 and higher as well.
+
+    ver | find /i "[Version 10." >nul 2>&1
+
+    goto :EOF
+
+:setup #[global] ()
     call :setup_colors
     call :setup_term
     call :setup_title
@@ -188,7 +216,7 @@
 :setup_colors #[global] ()
     for /f "usebackq" %%c in (`echo:prompt $E ^| cmd 2^>nul`) do set esc=%%c
 
-    if not defined ClientName ver | find /i "Version 10.0" >nul 2>&1 && (
+    if not defined ClientName call :is_windows_10_or_higher && (
         set RED=%esc%[31m
         set GREEN=%esc%[32m
         set YELLOW=%esc%[33m
