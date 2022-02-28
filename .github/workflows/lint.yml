@@ -23,18 +23,15 @@ jobs:
       - name: Checkout the latest code
         uses: actions/checkout@v2
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          stable: true
-
-      - name: Install actionlint
-        run: go install github.com/rhysd/actionlint/cmd/actionlint
+      - name: Download actionlint
+        id: download_actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+        shell: bash
 
       - name: Enable actionlint matcher
-        id: enable-actionlint-matcher
+        id: enable_actionlint_matcher
         run: echo "::add-matcher::.github/actionlint-matcher.json"
         shell: bash
 
       - name: Lint workflow files
-        run: actionlint -color
+        run: ${{ steps.download_actionlint.outputs.executable }} -color
