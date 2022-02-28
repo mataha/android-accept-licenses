@@ -22,8 +22,9 @@
 
 @setlocal DisableDelayedExpansion EnableExtensions
 
-@set PROGRAM=%~n0
+@set PROGRAM=androidl
 @set VERSION=1.0.1
+@set DESCRIPTION=Accepts licenses for all available packages of Android SDK.
 
 @goto :main
 
@@ -235,17 +236,17 @@
     goto :EOF
 
 :version
-    echo:%VERSION%
+    echo:%PROGRAM% %VERSION%
 
     exit /b 0
 
 :usage
-    echo:Usage: %PROGRAM% [-h] [--unattended] [--version]
-    echo:    Accepts licenses for all available packages of Android SDK.
+    echo:Usage: %PROGRAM% [-h] [-u] [--version]
+    echo:    %DESCRIPTION%
     echo:
     echo:    Optional arguments:
     echo:      -h, --help        show this help message and exit
-    echo:      --unattended, -u  run this script unattended (don't halt)
+    echo:      -u, --unattended  run this script unattended (don't halt)
     echo:      --version         output version information and exit
     echo:
     echo:    Exit status:

@@ -15,12 +15,12 @@ whatsoever.
 ## Usage
 
 ```
-Usage: androidl [-h] [--unattended] [--version]
+Usage: androidl [-h] [-u] [--version]
     Accepts licenses for all available packages of Android SDK.
 
     Optional arguments:
       -h, --help        show this help message and exit
-      --unattended, -u  run this script unattended (don't halt)
+      -u, --unattended  run this script unattended (don't halt)
       --version         output version information and exit
 
     Exit status:
