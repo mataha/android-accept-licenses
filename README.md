@@ -9,7 +9,7 @@ Should work with Windows Vista and up.
 
 ## Installation
 
-Get [the script](./androidl.cmd), run it, voilà. No dependencies required
+Get [the script](./src/androidl.cmd), run it, voilà. No dependencies required
 whatsoever.
 
 ## Usage
