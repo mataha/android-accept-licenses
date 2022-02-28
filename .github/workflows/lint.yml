@@ -1,0 +1,40 @@
+name: Lint workflow files
+
+on:
+  push:
+    branches:
+      - master
+    tags-ignore:
+      - '*'
+    paths:
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: 'Lint'
+
+    runs-on: 'ubuntu-latest'
+
+    steps:
+      - name: Checkout the latest code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          stable: true
+
+      - name: Install actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@latest
+
+      - name: Enable actionlint matcher
+        id: enable-actionlint-matcher
+        run: echo "::add-matcher::.github/actionlint-matcher.json"
+        shell: bash
+
+      - name: Lint workflow files
+        run: actionlint -color
