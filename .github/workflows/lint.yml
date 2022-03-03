@@ -9,6 +9,9 @@ on:
     paths:
       - '.github/workflows/**'
   pull_request:
+    types:
+      - opened # no need on 'reopened'
+      - synchronize
     paths:
       - '.github/workflows/**'
   workflow_dispatch:
@@ -25,13 +28,16 @@ jobs:
 
       - name: Download actionlint
         id: download_actionlint
-        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
         shell: bash
+        run: |
+          bash <(curl "https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash")
 
       - name: Enable actionlint matcher
-        id: enable_actionlint_matcher
-        run: echo "::add-matcher::.github/actionlint-matcher.json"
         shell: bash
+        run: |
+          echo "::add-matcher::.github/actionlint-matcher.json"
 
       - name: Lint workflow files
-        run: ${{ steps.download_actionlint.outputs.executable }} -color
+        shell: bash
+        run: |
+          ${{ steps.download_actionlint.outputs.executable }} -color
