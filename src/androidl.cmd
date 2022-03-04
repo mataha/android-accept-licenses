@@ -23,7 +23,7 @@
 @setlocal DisableDelayedExpansion EnableExtensions
 
 @set PROGRAM=androidl
-@set VERSION=1.0.1
+@set VERSION=1.0.1+dev
 @set DESCRIPTION=Accepts licenses for all available packages of Android SDK.
 
 @goto :main
@@ -104,7 +104,7 @@
 
     :: Take 1: try to find `sdkmanager` in our PATH (or in this directory)
     set sdkmanager=%binary%
-    where /q %sdkmanager% 2>nul && goto :command_exists
+    call :is_command_available "%sdkmanager%" && goto :sdkmanager_exists
 
     :: Take 2: check whether we can find `sdkmanager` from ANDROID_SDK_ROOT
     call :find_android_sdk_root android_sdk_root
@@ -112,14 +112,14 @@
     :: Take 2a: latest SDK Command-Line Tools package directory
     :: https://developer.android.com/studio/command-line/#tools-sdk
     set sdkmanager=%android_sdk_root%\cmdline-tools\latest\bin\%binary%
-    if exist "%sdkmanager%" goto :command_exists
+    if exist "%sdkmanager%" goto :sdkmanager_exists
 
     :: Take 2b: legacy SDK Tools package directory (last revision: 26.1.1)
     :: https://developer.android.com/studio/releases/sdk-tools
     set sdkmanager=%android_sdk_root%\tools\bin\%binary%
-    if exist "%sdkmanager%" goto :command_exists
+    if exist "%sdkmanager%" goto :sdkmanager_exists
 
-    :command_exists
+    :sdkmanager_exists
         call %sdkmanager% --version >nul 2>&1
         set error_level=%ERRORLEVEL%
 
@@ -177,6 +177,11 @@
     set /a "licenses=%token%" 2>nul || set /a "licenses=0" >nul 2>&1
 
     endlocal & set "%~2=%licenses%" & goto :EOF
+
+:is_command_available (command) -> errorlevel
+    where /q "%~1" 2>nul
+
+    goto :EOF
 
 :is_windows_10_or_higher () -> errorlevel
     ::      A short list of common Windows versions:
@@ -265,6 +270,15 @@
     goto :EOF
 
 :version
+    :: Assume we're running in the context of the project - from a subdirectory
+    if not "%VERSION%"=="%VERSION:+dev=%" for %%i in ("%~dp0.\..") do (
+        if exist "%%~i\.git\*" call :is_command_available "git" && (
+            for /f "eol= " %%c in ('git rev-parse --quiet --verify HEAD') do (
+                set "VERSION=%VERSION%.%%c"
+            )
+        )
+    )
+
     echo:%PROGRAM% %VERSION%
 
     exit /b 0
