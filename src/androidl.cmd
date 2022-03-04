@@ -121,9 +121,9 @@
 
     :sdkmanager_exists
         call %sdkmanager% --version >nul 2>&1
-        set error_level=%ERRORLEVEL%
+        set /a code=%ERRORLEVEL%
 
-    endlocal & set "%~1=%sdkmanager%" & exit /b %error_level%
+    endlocal & set "%~1=%sdkmanager%" & exit /b %code%
 
 :accept_licenses (*sdkmanager, *licenses)
     setlocal EnableDelayedExpansion
