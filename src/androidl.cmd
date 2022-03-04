@@ -219,7 +219,7 @@
     goto :EOF
 
 :setup_colors #[global] ()
-    for /f "usebackq" %%c in (`echo:prompt $E^| cmd 2^>nul`) do set esc=%%c
+    for /f "usebackq" %%c in (`echo:prompt $E^| cmd "" 2^>nul`) do set esc=%%c
 
     if not defined ClientName call :is_windows_10_or_higher && (
         set RED=%esc%[31m
