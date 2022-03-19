@@ -272,7 +272,7 @@
 :version
     :: Assume we're running in the context of the project - from a subdirectory
     if not "%VERSION%"=="%VERSION:+dev=%" for %%i in ("%~dp0.\..") do (
-        if exist "%%~i\.git\*" call :is_command_available "git" && (
+        if exist "%%~fi\.git\*" call :is_command_available "git" && (
             for /f %%c in ('git rev-parse --quiet --verify HEAD 2^>nul') do (
                 set "VERSION=%VERSION%.%%c"
             )

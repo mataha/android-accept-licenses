@@ -18,4 +18,4 @@
 :: FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 :: IN THE SOFTWARE.
 
-@for %%i in ("%~dp0.\..\src") do @call "%%~fi\%~n0.cmd" %*
+@for %%i in ("%~dp0.\..") do @call "%%~fi\src\%~n0.cmd" %*
