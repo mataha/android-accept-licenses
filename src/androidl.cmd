@@ -119,6 +119,8 @@
     set sdkmanager=%android_sdk_root%\tools\bin\%binary%
     if exist "%sdkmanager%" goto :sdkmanager_exists
 
+    set /a code=0
+
     :sdkmanager_exists
         call "%sdkmanager%" --version >nul 2>&1
         set /a code=%ERRORLEVEL%
