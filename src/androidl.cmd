@@ -23,7 +23,7 @@
 @setlocal DisableDelayedExpansion EnableExtensions
 
 @set PROGRAM=androidl
-@set VERSION=1.0.2+dev
+@set VERSION=1.0.3+dev
 @set DESCRIPTION=Accepts licenses for all available packages of Android SDK.
 
 @goto :main
