@@ -120,7 +120,7 @@
     if exist "%sdkmanager%" goto :sdkmanager_exists
 
     :sdkmanager_exists
-        call %sdkmanager% --version >nul 2>&1
+        call "%sdkmanager%" --version >nul 2>&1
         set /a code=%ERRORLEVEL%
 
     endlocal & set "%~1=%sdkmanager%" & exit /b %code%
