@@ -18,9 +18,9 @@ on:
 
 jobs:
   lint:
-    name: 'Lint'
+    name: Lint
 
-    runs-on: 'ubuntu-latest'
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout the latest code
